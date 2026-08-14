@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(.\\\\.venv\\\\Scripts\\\\python.exe -c \"import sqlite3;c=sqlite3.connect\\('triage.db'\\);[print\\(r[0]\\) for r in c.execute\\(\\\\\"select sql from sqlite_master where type='table' and name not like 'sqlite_%'\\\\\"\\)]\")",
+      "PowerShell($env:PYTHONPATH = \"C:\\\\Users\\\\Admin\\\\Desktop\\\\Digiplus IT\"; .\\\\.venv\\\\Scripts\\\\python.exe \"C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Admin-Desktop-Digiplus-IT\\\\6080da3e-59ef-4f63-a3f7-6c750a220471\\\\scratchpad\\\\show_kb.py\")",
+      "PowerShell($env:PYTHONPATH = \"C:\\\\Users\\\\Admin\\\\Desktop\\\\Digiplus IT\"; .\\\\.venv\\\\Scripts\\\\python.exe \"C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Admin-Desktop-Digiplus-IT\\\\6080da3e-59ef-4f63-a3f7-6c750a220471\\\\scratchpad\\\\verify_state.py\")",
+      "Bash(python -c ' *)",
+      "PowerShell(.\\\\.venv\\\\Scripts\\\\python.exe \"C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Admin-Desktop-Digiplus-IT\\\\6080da3e-59ef-4f63-a3f7-6c750a220471\\\\scratchpad\\\\fix_mojibake.py\")",
+      "Bash(python -)",
+      "PowerShell(.\\\\.venv\\\\Scripts\\\\python.exe -m py_compile app.py; if \\($?\\) { \"app.py compiles\" })",
+      "PowerShell(.\\\\.venv\\\\Scripts\\\\python.exe -m pip list 2>$null | Select-String -Pattern \"^fastapi|^streamlit|^requests |^starlette\" | ForEach-Object { $_.ToString\\(\\).Trim\\(\\) })"
+    ]
+  }
+}
