@@ -3,7 +3,7 @@
 An AI-assisted support desk: log an incident, and it is automatically categorised, prioritised,
 summarised, matched against a knowledge base, and given a draft resolution for an engineer to review.
 
-**Stack:** FastAPI · SQLite · SQLAlchemy 2.0 · Groq (`llama-3.3-70b-versatile`) · Streamlit
+**Stack:** FastAPI · SQLite · SQLAlchemy 2.0 · Groq (`llama-3.3-70b-versatile`) · React 19 + Vite + Tailwind CSS
 
 ---
 
@@ -90,11 +90,15 @@ zero-cost seed. Both scripts are idempotent — re-running skips rows that alrea
 In a **second terminal**, with the backend still running:
 
 ```powershell
-.\.venv\Scripts\python.exe -m streamlit run app.py
+cd frontend
+npm install
+npm run dev
 ```
 
-Opens at **http://localhost:8501**. It talks to the backend over HTTP using `requests`; point it
-elsewhere with `API_BASE=http://host:port`.
+Opens at **http://localhost:5173**. It talks to the backend over HTTP from the browser, relying on
+the CORS middleware the API already enables; point it elsewhere with `VITE_API_BASE` in
+`frontend/.env`. Requires Node 20 or newer. See [`frontend/README.md`](frontend/README.md) for the
+page map and design tokens.
 
 ---
 
@@ -187,8 +191,8 @@ than silently ignored.
 ## 🏗️ Approach & Architecture
 
 ```
-Streamlit UI (app.py) ──HTTP──> FastAPI (app/) ──> SQLite (incidents.db)
-      :8501                        :8000                    │
+React SPA (frontend/) ──HTTP──> FastAPI (app/) ──> SQLite (incidents.db)
+      :5173                        :8000                    │
                                      │                      │
                                      └──> app/pipeline.py ──┴──> Groq API
                                             analyse → match KB → draft
@@ -216,13 +220,21 @@ that the worst case is a null field plus a logged error, and the same `run_pipel
 the API, the `/reanalyze` endpoint, and the seeder — so a seeded row is indistinguishable from one
 created through the UI.
 
-**Frontend.** Streamlit was chosen for speed of delivery, then styled well past its defaults with
-injected CSS: a branded gradient header, card-style containers, coloured pill badges, KPI tiles, and
-an indigo accent palette. Creating, viewing, and resolving all happen in `st.dialog` popups rather
-than permanently-visible forms, feedback uses non-blocking toasts, and destructive actions require
-explicit confirmation — resolving opens a dialog with the editable draft rather than firing on click.
-The frontend holds no business logic and imports nothing from the backend package; it communicates
-purely over HTTP, so either side can be restarted independently.
+**Frontend.** A React 19 single-page app built with Vite and Tailwind CSS 4, routed with React
+Router across a dashboard, all/ongoing/completed incident views, a create page, and a detail page.
+It holds no business logic and imports nothing from the backend package; it communicates purely over
+HTTP, so either side can be restarted independently.
+
+Two decisions are worth calling out. **The board is fetched once and sliced in the client**: the list
+endpoint filters by a single status, but "ongoing" spans two of them, and the nav badges need
+whole-board counts on every page — one fetch keeps those counts mutually consistent and makes
+navigation instant. **Priority is drawn as a single-hue ordinal ramp** rather than four semantic
+colours: priority is ordered magnitude, so a light→dark ramp encodes severity in the colour itself,
+and the four steps are validated for monotone lightness and contrast against the card surface.
+Status and priority always carry a text label, so neither relies on hue alone.
+
+Destructive actions require explicit confirmation — resolving opens the editable AI draft rather than
+firing on click — and every write reports through a non-blocking toast.
 
 ---
 
@@ -277,9 +289,11 @@ Two consequences of this decision are deliberate:
 - **No authentication or authorisation.** Every endpoint is public and CORS allows all origins for
   local development. `CORS_ORIGINS` can restrict this, but real deployment needs auth first.
 - **Testing was done during development rather than as a committed suite.** The API, AI failure
-  paths, KB matching, resolution drafting, CORS, and the Streamlit UI were each exercised with
-  purpose-written harnesses — including Streamlit's `AppTest` for dialog and filter-state behaviour —
-  but these are not checked in as a `pytest` suite, which is the main gap in the submission.
+  paths, KB matching, resolution drafting, and CORS were each exercised with purpose-written
+  harnesses, but these are not checked in as a `pytest` suite, which is the main gap in the
+  submission. The frontend is covered only by its production build and by manual checks against a
+  running backend — there is no component or end-to-end test suite, which is the equivalent gap on
+  that side.
 - **KB match quality is bounded by having only 10 articles.** Incidents involving BitLocker, Intune,
   SSO, or voicemail have no corresponding article and correctly return no match. That is the system
   declining to force a weak match, not a failure — but it means match coverage reflects KB size more
@@ -312,7 +326,8 @@ Two consequences of this decision are deliberate:
 4. **Authentication and audit trail.** Per-engineer accounts, role-based permissions on resolve, and
    a record of who edited an AI draft before saving it — useful both operationally and for measuring
    how much the drafts actually get changed.
-5. **Analytics dashboard.** Resolution times by category and priority, KB article hit rates, the
+5. **Deeper analytics.** The dashboard currently shows live counts and a priority distribution.
+   Worth adding: resolution times by category and priority, KB article hit rates, the
    share of drafts accepted unedited, and AI-assigned priority compared against what engineers
    corrected it to — the dataset's own `P1`–`P4` column is available as ground truth for scoring
    classification accuracy.
@@ -334,7 +349,14 @@ Two consequences of this decision are deliberate:
 │   └── routers/
 │       ├── incidents.py   Incident CRUD, reanalyze, resolve
 │       └── kb.py          Knowledge base listing
-├── app.py                 Streamlit frontend
+├── frontend/              React + Vite + Tailwind SPA (see frontend/README.md)
+│   ├── src/
+│   │   ├── pages/         Dashboard, All, Ongoing, Completed, Create, Detail
+│   │   ├── components/    Layout, list, card, badges, stat tile, chart
+│   │   ├── context/       Shared board fetch, counts, toasts
+│   │   ├── api/client.js  fetch wrapper; every call returns { data, error }
+│   │   └── index.css      Design tokens (@theme) + component classes
+│   └── package.json
 ├── hf_source.py           HuggingFace dataset loader (timeout, column detection)
 ├── seed_kb.py             Seeds kb_articles
 ├── seed_incidents.py      Seeds incidents, with optional --analyze

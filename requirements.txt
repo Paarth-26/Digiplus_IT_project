@@ -1,4 +1,3 @@
-# Upgraded from 0.115.6: streamlit requires starlette>=1.x, which 0.115 rejects.
 fastapi==0.141.1
 uvicorn[standard]==0.34.0
 SQLAlchemy==2.0.36
@@ -8,6 +7,5 @@ groq==1.6.0
 # Seed script only — the fallback path in seed_kb.py works without it.
 datasets==5.0.1
 
-# Streamlit frontend (app.py). Talks to the backend over HTTP only.
-streamlit==1.61.1
-requests==2.34.2
+# The frontend is a separate React app; see frontend/README.md. It talks to this
+# backend over HTTP from the browser, so it adds nothing to this file.

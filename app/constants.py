@@ -29,8 +29,8 @@ CATEGORIES: tuple[str, ...] = get_args(CategoryLiteral)
 # --------------------------------------------------------------------------
 # emoji
 # --------------------------------------------------------------------------
-# Coloured dots rather than pictographs: these render as badges in the Streamlit UI,
-# and the frontend reads these values from the API rather than keeping its own map.
+# Coloured dots rather than pictographs: these render as badges in the UI, and the
+# frontend reads these values from the API rather than keeping its own map.
 STATUS_EMOJI: dict[str, str] = {
     "open": "🔵",
     "in_progress": "🟡",
